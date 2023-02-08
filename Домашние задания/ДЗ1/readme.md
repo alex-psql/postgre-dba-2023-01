@@ -43,13 +43,18 @@ COMMIT
 7. начать новые но уже repeatable read транзации  
 >set transaction isolation level repeatable read;
 
-
-в первой сессии добавить новую запись insert into persons(first_name, second_name) values('sveta', 'svetova');
-сделать select * from persons во второй сессии
-видите ли вы новую запись и если да то почему?
-завершить первую транзакцию - commit;
-сделать select * from persons во второй сессии
-видите ли вы новую запись и если да то почему?
-завершить вторую транзакцию
-сделать select * from persons во второй сессии
-видите ли вы новую запись и если да то почему? ДЗ сдаем в виде миниотчета в markdown в гите
+8. добавить новую запись 
+сессия1
+>insert into colorhexcodes(color, hexcode) values('blue', '0004ff');
+сессия2
+>select * from colorhexcodes;
+В первой сессии транзакция висит без коммита.
+сессия1
+>commit;
+*видите ли вы новую запись и если да то почему?*
+Нет, потому что repeateble read на транзакции.
+сессия2
+>commit;  
+>select * from colorhexcodes;
+*видите ли вы новую запись и если да то почему?* 
+Вижу, потому что repeatable read слетает после завершения транзакции на read commited.
