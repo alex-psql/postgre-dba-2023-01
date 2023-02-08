@@ -44,17 +44,25 @@ COMMIT
 >set transaction isolation level repeatable read;
 
 8. добавить новую запись 
+
 сессия1
 >insert into colorhexcodes(color, hexcode) values('blue', '0004ff');
+
 сессия2
 >select * from colorhexcodes;
+
 В первой сессии транзакция висит без коммита.
+
 сессия1
 >commit;
+
 *видите ли вы новую запись и если да то почему?*
+
 Нет, потому что repeateble read на транзакции.
+
 сессия2
 >commit;  
 >select * from colorhexcodes;
 *видите ли вы новую запись и если да то почему?* 
+
 Вижу, потому что repeatable read слетает после завершения транзакции на read commited.
