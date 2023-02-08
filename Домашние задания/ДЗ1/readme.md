@@ -21,16 +21,29 @@ COMMIT
 >show transaction isolation level;   
 >read committed
 
+6. начать новую транзакцию в обеих сессиях с текущим уровнем изоляции  
 
-начать новую транзакцию в обоих сессиях с дефолтным (не меняя) уровнем изоляции
-в первой сессии добавить новую запись insert into persons(first_name, second_name) values('sergey', 'sergeev');
-сделать select * from persons во второй сессии
-видите ли вы новую запись и если да то почему?
-завершить первую транзакцию - commit;
-сделать select * from persons во второй сессии
-видите ли вы новую запись и если да то почему?
-завершите транзакцию во второй сессии
-начать новые но уже repeatable read транзации - set transaction isolation level repeatable read;
+сессия1
+>insert into colorhexcodes(color, hexcode) values('red', 'ff0000');
+
+сессия2
+>select * from colorhexcodes;
+
+*видите ли вы новую запись и если да то почему?*  
+
+Нет, потому что транзакция не закоммичена.
+
+сессия1
+>commit;
+
+*видите ли вы новую запись и если да то почему?*
+
+Да, транзакция завешена и данные появились в таблице. (Во второй сессии открытых транзакций нет, commit об этом скажет при выполнении.)
+
+7. начать новые но уже repeatable read транзации  
+>set transaction isolation level repeatable read;
+
+
 в первой сессии добавить новую запись insert into persons(first_name, second_name) values('sveta', 'svetova');
 сделать select * from persons во второй сессии
 видите ли вы новую запись и если да то почему?
