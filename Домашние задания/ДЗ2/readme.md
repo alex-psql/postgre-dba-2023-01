@@ -42,12 +42,5 @@ ___
 >sudo docker run --name pg-server --network postgre-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:14
 
 >postgres=# \l  
->                                 List of databases  
->   Name    |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges  
->-----------+----------+----------+------------+------------+-----------------------  
-> dck_db1   | postgres | UTF8     | en_US.utf8 | en_US.utf8 |                       // моя бд  
-> postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |  
-> template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
->           |          |          |            |            | postgres=CTc/postgres  
-> template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
->           |          |          |            |            | postgres=CTc/postgres  
+>dck_db1   | postgres | UTF8     | en_US.utf8 | en_US.utf8 |  // моя дб
+
