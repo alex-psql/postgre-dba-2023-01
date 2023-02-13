@@ -45,9 +45,9 @@ ___
 >                                 List of databases  
 >   Name    |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges  
 >-----------+----------+----------+------------+------------+-----------------------  
-> dck_db1   | postgres | UTF8     | en_US.utf8 | en_US.utf8 |                       // моя бд
-> postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |  
-> template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
->           |          |          |            |            | postgres=CTc/postgres  
-> template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
->           |          |          |            |            | postgres=CTc/postgres  
+> dck_db1   | postgres | UTF8     | en_US.utf8 | en_US.utf8 |                       // моя бд  
+> postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 |  
+> template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
+>           |          |          |            |            | postgres=CTc/postgres  
+> template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +  
+>           |          |          |            |            | postgres=CTc/postgres  
