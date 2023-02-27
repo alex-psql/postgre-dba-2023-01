@@ -7,43 +7,45 @@ ___
 
 >14  main    5432 online postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
 
-2. Создать каталог /var/lib/postgres и выдать права
->sudo mkdir /var/lib/postgres
-
-3. Создать сеть для контейнеров с pg и pg client
->sudo docker network create postgre-net
-
-4. Создать контейнер pg-server
->sudo docker run --name pg-server --network postgre-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:14
-
-5. Подлкючиться контейнером pg-client к контейнеру pg-server
->sudo docker run -it --rm --network postgre-net --name pg-client postgres:14 psql -h pg-server -U postgres
-
-6. Создать таблицу и заполнить её
+2. Создать и заполнить таблицу в бд postgres под пользователем postgres
 >create table colorhexcodes(id serial, color text, hexcode text); insert into colorhexcodes(color, hexcode) values('black', '000000'); insert into colorhexcodes(color, hexcode) values('white', 'ffffff');
 
-7. Подключиться извне
->psql -p 5432 -U postgres -h my.ip.add.ress -d postgres -W
+3. Остановить кластер pg
+>sudo -u postgres pg_ctlcluster 14 main stop  
+>14  main    5432 down   postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
 
-Установлено, свозданные базы и таблицы увидел.
+4. Создать и подключить диск, выдать права пользователю postgres
+>sudo mount /dev/sdb1 /mnt/data
+>sudo chown -R postgres:postgres /mnt/data/
 
-8. Удалить контейнер
-> sudo docker stop pg-server  
-> sudo docker rm pg-server
+5. Перенести файлы сервера pg14 на подмонтированный раздел
+>sudo mv /var/lib/postgresql/14 /mnt/data
 
-Без ключа --volumes каталог, использовавшийся как подключаемый том остается на сервере-хосте.
->sudo ls -la /var/lib/postgres/base  
->total 24  
->drwx------  6 lxd  999 4096 Feb 13 09:33 .  
->drwx------ 19 lxd root 4096 Feb 13 10:02 ..  
->drwx------  2 lxd  999 4096 Feb 13 09:15 1  
->drwx------  2 lxd  999 4096 Feb 13 09:15 13756  
->drwx------  2 lxd  999 4096 Feb 13 09:16 13757  
->drwx------  2 lxd  999 4096 Feb 13 09:49 16384 // моя база данных  
+6. Запустить кластер
+>Error: /var/lib/postgresql/14/main is not accessible or does not exist
 
-9. Создать контейнер заново и подключиться. 
->sudo docker run --name pg-server --network postgre-net -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 -v /var/lib/postgres:/var/lib/postgresql/data postgres:14
+Файлы сервера перенесены, а в конфиге остался старый путь.
+>sudo nano /etc/postgresql/14/main/postgresql.conf
 
->postgres=# \l  
->dck_db1   | postgres | UTF8     | en_US.utf8 | en_US.utf8 |  // моя дб
+Меняем путь на новый.
 
+>data_directory = '/mnt/data/14/main'
+
+Стартуем.
+
+>sudo -u postgres pg_ctlcluster 14 main start  
+>14  main    5432 online postgres /mnt/data/14/main /var/log/postgresql/postgresql-14-main.log
+
+Запущено успешно с новым путём из конфига.
+
+8. Проверить данные.
+>postgres=# select * from colorhexcodes;  
+>id | color | hexcode  
+>----+-------+---------  
+>  1 | black | 000000  
+>  2 | white | ffffff  
+>(2 rows)
+
+На месте.
+
+9*. В моём случае: создал новую вм, установил Ubuntu и PG14, остановил кластер на исходной ВМ, отмонтировал диск, добавил к новой ВМ существующий диск с разделом и фс. Смонтировал к той же папке /mnt/data, поменял владельца. Далее остановил кластер 14main, указал /mnt/data/14/main как путь data_directory и запустил кластер. 
