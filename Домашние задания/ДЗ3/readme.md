@@ -47,8 +47,8 @@ ___
 Всё ок, потому что первое правило бойцовского клуба - явно указывать схему при создании таблиц. 
 
 7. Создать новую таблицу в схеме colorsnm.
-create table colorsnm.colors2(c1 integer);
-ERROR:  permission denied for schema colorsnm
+>create table colorsnm.colors2(c1 integer);  
+>ERROR:  permission denied for schema colorsnm  
 
 Всё ок. 
 
