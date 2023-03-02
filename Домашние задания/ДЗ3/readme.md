@@ -1,51 +1,72 @@
-### Физический уровень PostgreSQL
+### Работа с базами данных, пользователями и правами
 Выполнял на своей виртуальной машине Ubuntu 22.04, т.к. в приоритете на данный момент on-premise решение.
 ___
-1. Установить PostgreSQL 14 и проверить, что он запустился
->sudo apt -y install postgresql-14  
->pg_lsclusters
+1. Установить PostgreSQL 14 и создать базу данных 
+>create database colors;
 
->14  main    5432 online postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
+2. Создать схему в дб
+>create schema colorsnm;
 
-2. Создать и заполнить таблицу в бд postgres под пользователем postgres
->create table colorhexcodes(id serial, color text, hexcode text); insert into colorhexcodes(color, hexcode) values('black', '000000'); insert into colorhexcodes(color, hexcode) values('white', 'ffffff');
+3. Создать таблицу (в схеме) и заполнсить.
+>create table colorsnm.colorhexcodes(id serial, color text, hexcode text); insert into colorsnm.colorhexcodes(color, hexcode) values('black', '000000'); insert into colorsnm.colorhexcodes(color, hexcode) values('white', 'ffffff');
 
-3. Остановить кластер pg
->sudo -u postgres pg_ctlcluster 14 main stop  
->14  main    5432 down   postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
-
-4. Создать и подключить диск, выдать права пользователю postgres
->sudo mount /dev/sdb1 /mnt/data  
->sudo chown -R postgres:postgres /mnt/data/
-
-5. Перенести файлы сервера pg14 на подмонтированный раздел
->sudo mv /var/lib/postgresql/14 /mnt/data
-
-6. Запустить кластер
->Error: /var/lib/postgresql/14/main is not accessible or does not exist
-
-Файлы сервера перенесены, а в конфиге остался старый путь.
->sudo nano /etc/postgresql/14/main/postgresql.conf
-
-Меняем путь на новый.
-
->data_directory = '/mnt/data/14/main'
-
-Стартуем.
-
->sudo -u postgres pg_ctlcluster 14 main start  
->14  main    5432 online postgres /mnt/data/14/main /var/log/postgresql/postgresql-14-main.log
-
-Запущено успешно с новым путём из конфига.
-
-8. Проверить данные.
->postgres=# select * from colorhexcodes;  
->id | color | hexcode  
+>colors=# select * from colorsnm.colorhexcodes;  
+> id | color | hexcode  
 >----+-------+---------  
 >  1 | black | 000000  
 >  2 | white | ffffff  
->(2 rows)
+>(2 rows)  
 
-На месте.
+4. Создать новую роль с правами ro, дать ей права на подключение к colors, использование схемы colorsnm и селект всех таблиц в схеме.
 
-9*. В моём случае: создал новую ВМ, установил Ubuntu и PG14, остановил кластер на исходной ВМ, отмонтировал диск, добавил к новой ВМ существующий диск с разделом и фс. Смонтировал к той же папке /mnt/data. Далее остановил кластер 14main, указал /mnt/data/14/main как путь data_directory и запустил кластер. А он и говорит, что кластер принадлежит юзеру с айди 115, которого нет в системе. А значит имя ничего не значит, и нужно сменить владельца на пользователя postgres от текущей вм. Далее всё поднялось, данные на месте. 
+>colors=# create role readonly;  
+>CREATE ROLE  
+>colors=# grant connect on database colors to readonly;  
+>GRANT  
+>grant usage on schema colorsnm to readonly;  
+>GRANT  
+>colors=# grant select on all tables in schema colorsnm to readonly;  
+>GRANT  
+
+5. Создать пользователя и связать его с ролью readonly
+
+>colors=# create user colorsread with password '123123';  
+>CREATE ROLE  
+
+>colors=# grant readonly to colorsread;  
+>GRANT ROLE  
+
+6. Авторизоваться под colorsread и сделать селект.
+>colors=> select * from colorsnm.colorhexcodes;  
+> id | color | hexcode  
+>----+-------+---------  
+>  1 | black | 000000  
+>  2 | white | ffffff  
+>(2 rows)  
+
+Всё ок, потому что первое правило бойцовского клуба - явно указывать схему при создании таблиц. 
+
+7. Создать новую таблицу в схеме colorsnm.
+create table colorsnm.colors2(c1 integer);
+ERROR:  permission denied for schema colorsnm
+
+Всё ок. 
+
+8. Создать таблицу в схеме public.
+>colors=> create table colors2(c1 integer); insert into colors2 values (2);  
+>CREATE TABLE  
+>INSERT 0 1  
+
+Вот тут пришлось залезть в шпаргалку
+>colors=# revoke CREATE on SCHEMA public FROM public;  
+>REVOKE  
+>colors=# revoke all on DATABASE colors FROM public;  
+>REVOKE  
+
+>colors=> create table colors3(c1 integer); insert into colors2 values (2);  
+>ERROR:  permission denied for schema public  
+
+Права ушли. 
+
+p.s. попытка удалить пользователя из роли паблик ни к чему не привела, а документация сказала, что роль public *is special*
+
