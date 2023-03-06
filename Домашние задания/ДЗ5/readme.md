@@ -22,16 +22,16 @@ max_wal_size = 16GB
 
 3. Первая итерация - настройки из ДЗ.
 
-progress: 60.0 s, 796.3 tps, lat 10.038 ms stddev 9.792
-progress: 120.0 s, 535.7 tps, lat 14.932 ms stddev 20.648
-progress: 180.0 s, 784.7 tps, lat 10.192 ms stddev 10.602
-progress: 240.0 s, 792.9 tps, lat 10.089 ms stddev 10.938
-progress: 300.0 s, 779.4 tps, lat 10.261 ms stddev 10.236
-progress: 360.0 s, 805.2 tps, lat 9.932 ms stddev 11.567
-progress: 420.0 s, 578.2 tps, lat 13.828 ms stddev 18.259
-progress: 480.0 s, 796.8 tps, lat 10.041 ms stddev 11.857
-progress: 540.0 s, 801.5 tps, lat 9.979 ms stddev 10.374
-progress: 600.0 s, 797.2 tps, lat 10.028 ms stddev 11.211
+progress: 60.0 s, 796.3 tps, lat 10.038 ms stddev 9.792  
+progress: 120.0 s, 535.7 tps, lat 14.932 ms stddev 20.648  
+progress: 180.0 s, 784.7 tps, lat 10.192 ms stddev 10.602  
+progress: 240.0 s, 792.9 tps, lat 10.089 ms stddev 10.938  
+progress: 300.0 s, 779.4 tps, lat 10.261 ms stddev 10.236  
+progress: 360.0 s, 805.2 tps, lat 9.932 ms stddev 11.567  
+progress: 420.0 s, 578.2 tps, lat 13.828 ms stddev 18.259  
+progress: 480.0 s, 796.8 tps, lat 10.041 ms stddev 11.857  
+progress: 540.0 s, 801.5 tps, lat 9.979 ms stddev 10.374  
+progress: 600.0 s, 797.2 tps, lat 10.028 ms stddev 11.211  
 
 4. Вторая и далее...
 А  дальше, сколько бы я ни менял настройки, картина остается плюс минус такой же. Первым делом воспроизвел настройки из лекции "рекоемндуемые". 790-830 tps с провалами на некоторых шагах. Пробовал устанавливать крайние значения для всех настроек, связанных с вауумом. Так же сбрасывал в минимум настройки по памяти для рабочего процесса и игрался с io concurrency, но тпс по-прежнему оставался в пределах 790-830 с провалами до 500. От последних не удалось избавиться никак. 
