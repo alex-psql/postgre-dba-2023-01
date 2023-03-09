@@ -1,51 +1,50 @@
-### Физический уровень PostgreSQL
-Выполнял на своей виртуальной машине Ubuntu 22.04, т.к. в приоритете на данный момент on-premise решение.
+### Работа с журналами
+Выполнял на своей виртуальной машине Ubuntu 22.04, т.к. в приоритете на данный момент on-premise решение. Установлен кластер PG14.
 ___
-1. Установить PostgreSQL 14 и проверить, что он запустился
->sudo apt -y install postgresql-14  
->pg_lsclusters
+1. Настроить выполнение контрольных точек раз в 30 секунд в postgresql.conf
 
->14  main    5432 online postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
+>checkpoint_timeout = 30s  
+max_wal_size = 16GB  
+min_wal_size = 1.6GB
 
-2. Создать и заполнить таблицу в бд postgres под пользователем postgres
->create table colorhexcodes(id serial, color text, hexcode text); insert into colorhexcodes(color, hexcode) values('black', '000000'); insert into colorhexcodes(color, hexcode) values('white', 'ffffff');
 
-3. Остановить кластер pg
->sudo -u postgres pg_ctlcluster 14 main stop  
->14  main    5432 down   postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log
+2. Создать дб для теста и подать нагрузку.
+>CREATE DATABASE bench;  
+pgbench -i bench  
+pgbench -c 8 -P 60 -T 600 bench
 
-4. Создать и подключить диск, выдать права пользователю postgres
->sudo mount /dev/sdb1 /mnt/data  
->sudo chown -R postgres:postgres /mnt/data/
+3. Измерьте, какой объем журнальных файлов был сгенерирован за это время.
+>ls -l --block-size=M /mnt/data/14/main/pg_wal/  
+>total 64m
 
-5. Перенести файлы сервера pg14 на подмонтированный раздел
->sudo mv /var/lib/postgresql/14 /mnt/data
+4. Оценить, какой объем приходится в среднем на одну контрольную точку.
+>MB per checkpoint   | 1.58  
 
-6. Запустить кластер
->Error: /var/lib/postgresql/14/main is not accessible or does not exist
+Использовал найденный на просторах интернета запрос с отчетом по чекпоинтам. Так же можно вытащить из лога (ниже).
 
-Файлы сервера перенесены, а в конфиге остался старый путь.
->sudo nano /etc/postgresql/14/main/postgresql.conf
+5. Проверить, все ли контрольные точки выполнялись по расписанию.
+>включить в конфиге логирование чекпоинтов, произвести повторный замер  
 
-Меняем путь на новый.
+>grep "checkpoint starting" /var/log/postgresql/postgresql-14-main.log  
+2023-03-09 12:16:32.538 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:17:02.118 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:17:32.174 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:18:02.122 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:18:32.161 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:19:02.122 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:19:32.094 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:20:02.237 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:20:32.178 UTC [125688] LOG:  checkpoint starting: time  
+2023-03-09 12:21:02.138 UTC [125688] LOG:  checkpoint starting: time  
 
->data_directory = '/mnt/data/14/main'
+Всё вовремя, потому что время записи чекпоинта write=26.792 секунд. 
 
-Стартуем.
+6. Замерить tps при асинхронном режиме.
+>progress: 240.0 s, 5122.5 tps, lat 1.561 ms stddev 1.253
 
->sudo -u postgres pg_ctlcluster 14 main start  
->14  main    5432 online postgres /mnt/data/14/main /var/log/postgresql/postgresql-14-main.log
+Ускорение в 10 раз. Нет контроля записи. Опасно для критичных данных. 
 
-Запущено успешно с новым путём из конфига.
-
-8. Проверить данные.
->postgres=# select * from colorhexcodes;  
->id | color | hexcode  
->----+-------+---------  
->  1 | black | 000000  
->  2 | white | ffffff  
->(2 rows)
-
-На месте.
-
-9*. В моём случае: создал новую ВМ, установил Ubuntu и PG14, остановил кластер на исходной ВМ, отмонтировал диск, добавил к новой ВМ существующий диск с разделом и фс. Смонтировал к той же папке /mnt/data. Далее остановил кластер 14main, указал /mnt/data/14/main как путь data_directory и запустил кластер. А он и говорит, что кластер принадлежит юзеру с айди 115, которого нет в системе. А значит имя ничего не значит, и нужно сменить владельца на пользователя postgres от текущей вм. Далее всё поднялось, данные на месте. 
+7. Контрольные суммы.
+При старте проходит проверка. Если проверка не выполняется, получаем ошибку. 
+>ERROR: invalid page
+Чтобы обойти, необходио в конфиге включить ignore_checksum_failure. Инструмент, когда нет бэкапа/зеркала, чтобы достать все сохранившиеся данные. Включать контроль суммы следует только на критически точных данных в дополнение к внутренним ограничителям бд. 
